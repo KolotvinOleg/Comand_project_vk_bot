@@ -1,5 +1,6 @@
 import psycopg2
 
+
 def create_table(cursor):
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users_bot(
@@ -54,6 +55,7 @@ def create_table(cursor):
     """)
     print('Таблица photos успешно создана!')
 
+
 def add_user_bot(cursor, vk_id, first_name, last_name, age, city_id, city_title, gender):
     cursor.execute("""
     SELECT user_bot_id from users_bot
@@ -65,8 +67,9 @@ def add_user_bot(cursor, vk_id, first_name, last_name, age, city_id, city_title,
         VALUES(%s, %s, %s, %s, %s, %s, %s);
         """, (vk_id, first_name, last_name, age, city_id, city_title, gender))
 
-def select_all_vk_users(cursor, user_bot_id=None):
-    if user_bot_id is None:
+
+def select_all_vk_users(cursor, user_bot_id=None, search_id=None):
+    if user_bot_id is None and search_id is None:
         cursor.execute("""
         SELECT vk_user_id FROM vk_users
         """)
@@ -75,16 +78,18 @@ def select_all_vk_users(cursor, user_bot_id=None):
         SELECT vk_user_id FROM vk_users
         JOIN search_vk_users USING(vk_user_id)
         JOIN search USING(search_id)
-        WHERE user_bot_id = %s
-        """, (user_bot_id, ))
+        WHERE user_bot_id = %s AND search.search_id = %s
+        """, (user_bot_id, search_id))
     data_vk_users = cursor.fetchall()
     return [x[0] for x in data_vk_users]
 
+
 def insert_data_in_vk_users(cursor, vk_id, first_name, last_name, age, city_id, city_title, gender):
-        cursor.execute("""
+    cursor.execute("""
         INSERT INTO vk_users(vk_user_id, first_name, last_name, age, city_id, city_title, gender)
         VALUES(%s, %s, %s, %s, %s, %s, %s);
         """, (vk_id, first_name, last_name, age, city_id, city_title, gender))
+
 
 def insert_data_in_search(cursor, search_date, user_bot_id):
     cursor.execute("""
@@ -94,11 +99,13 @@ def insert_data_in_search(cursor, search_date, user_bot_id):
     search_id = cursor.fetchone()[0]
     return search_id
 
+
 def insert_data_in_search_vk_users(cursor, search_id, vk_user_id, favorite=False):
     cursor.execute("""
     INSERT INTO search_vk_users(search_id, vk_user_id, favorite)
     VALUES(%s, %s, %s)
     """, (search_id, vk_user_id, favorite))
+
 
 def insert_data_in_photos(cursor, photos_data):
     for photo in photos_data:
@@ -106,6 +113,7 @@ def insert_data_in_photos(cursor, photos_data):
         INSERT INTO photos(vk_user_id, likes, photos_link, owner_id, id)
         VALUES(%s, %s, %s, %s, %s)
         """, (photo['vk_id'], photo['likes'], photo['photos_link'], photo['owner_id'], photo['id']))
+
 
 def select_data_from_photos(cursor, vk_id):
     cursor.execute("""
@@ -115,13 +123,15 @@ def select_data_from_photos(cursor, vk_id):
     result = cursor.fetchall()
     return result
 
+
 def select_data_from_vk_users(cursor, vk_id):
     cursor.execute("""
     SELECT first_name, last_name FROM vk_users
     WHERE vk_user_id = %s
-    """, (vk_id, ))
+    """, (vk_id,))
     result = cursor.fetchone()
     return result
+
 
 def update_favorite(cursor, vk_id, search_id):
     cursor.execute("""
@@ -130,6 +140,7 @@ def update_favorite(cursor, vk_id, search_id):
     WHERE vk_user_id = %s and search_id = %s
     """, (vk_id, search_id))
 
+
 def select_favorite_users(cursor, user_bot_id):
     cursor.execute("""
     SELECT vk_user_id, first_name, last_name
@@ -137,9 +148,10 @@ def select_favorite_users(cursor, user_bot_id):
     JOIN search_vk_users USING(vk_user_id)
     JOIN search USING(search_id)
     WHERE user_bot_id = %s AND favorite = TRUE
-    """, (user_bot_id, ))
+    """, (user_bot_id,))
     result = cursor.fetchall()
     return result
+
 
 if __name__ == '__main__':
     with psycopg2.connect(database='netology_project_db', user='postgres', password='123098123Kol') as con:
