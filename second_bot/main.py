@@ -3,8 +3,8 @@ from second_bot.config import my_token, group_token
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from second_bot.db import insert_vk_user, insert_favourite_user, insert_photo
-from second_bot.db import session, Favourite_user, Vk_User, Photo
+from second_bot.db import insert_vk_user, insert_favourite_user, insert_photo, insert_vk_user_favourite_user
+from second_bot.db import session, Favourite_user, Vk_User, Photo, Vk_User_favourite_user
 
 
 vk_session_bot = vk_api.VkApi(token=group_token)
@@ -141,18 +141,21 @@ def test_bot():
 
             if msg == 'добавить в список избранных':
                 user_data = get_user_data(user['id'])
-                query = session.query(Vk_User.id).filter(Vk_User.vk_id == user_id).scalar()
-                user_data["id_vk_user"] = query
-                insert_favourite_user(session, user_data)
+                query = session.query(Favourite_user.vk_id)
+                if user['id'] not in list(session.scalars(query)):
+                    insert_favourite_user(session, user_data)
+                vk_user_id = session.query(Vk_User.id).filter(Vk_User.vk_id == int(user_id)).scalar()
+                favourite_user_id = session.query(Favourite_user.id).filter(Favourite_user.vk_id == int(user['id'])).scalar()
+                insert_vk_user_favourite_user(session, vk_user_id, favourite_user_id)
                 query = session.query(Favourite_user.id).filter(Favourite_user.vk_id == user["id"]).scalar()
                 for media_id in media_ids:
                     insert_photo(session, media_id, query)
-                send_message(user_id, f"{user['first_name']} {user['last_name']} добавлен в список избранных")
+                send_message(user_id, f"Пользователь: {user['first_name']} {user['last_name']} добавлен в список избранных")
 
             if msg == 'перейти к следующему':
                 user = next(users, 1)
                 if user == 1:
-                    offset += 50
+                    offset += 100
                     users = search_users(user_id, offset=offset)
                     user = next(users)
                 media_ids = get_photos(user["id"])
@@ -165,6 +168,7 @@ def test_bot():
                 send_message(user_id, "Список избранных:")
                 for query in session.query(Favourite_user.first_name + ' ' + Favourite_user.last_name,
                                            Favourite_user.vk_id) \
+                        .join(Vk_User_favourite_user)\
                         .join(Vk_User) \
                         .filter(Vk_User.vk_id == user_id).all():
                     full_name = query[0]
@@ -179,6 +183,7 @@ def test_bot():
 
 if __name__ == "__main__":
     test_bot()
+
 
 
 
