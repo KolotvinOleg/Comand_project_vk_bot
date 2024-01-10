@@ -102,9 +102,10 @@ def test_bot():
             if msg == 'начать':
                 keyboard = VkKeyboard(one_time=True)
                 keyboard.add_button(label='Start', color=VkKeyboardColor.PRIMARY)
-                send_message(user_id, 'Данный бот подбирает людей для знакомства, нажмите Start', keyboard)
+                send_message(user_id, 'Данный бот подбирает людей для знакомства, используя данные о вашем возрасте, поле и городе,\
+                 нажмите Start', keyboard)
 
-            if msg == 'start':
+            if msg == 'start' or msg == 'начать поиск заново':
 
                 id_list = []
                 for id in session.query(Vk_User.vk_id).all():
@@ -128,21 +129,24 @@ def test_bot():
                 user_data = get_user_data(user_id)
                 keyboard_2 = VkKeyboard()
                 keyboard_2.add_button(label='Добавить в список избранных', color=VkKeyboardColor.NEGATIVE)
-                keyboard_2.add_button(label='Перейти к следующему', color=VkKeyboardColor.POSITIVE)
+                keyboard_2.add_button(label='Следующий пользователь', color=VkKeyboardColor.POSITIVE)
                 keyboard_2.add_line()
                 keyboard_2.add_button(label='Посмотреть список избранных', color=VkKeyboardColor.POSITIVE)
-
+                keyboard_2.add_line()
+                keyboard_2.add_button(label='Начать поиск заново', color=VkKeyboardColor.POSITIVE)
                 media_ids = get_photos(user["id"])
                 attachment = [f'photo{user["id"]}_{media_id}' for media_id in media_ids]
                 send_message(user_id,
                              f"Добавить в список избранных?\n{user['first_name']} {user['last_name']}(https://vk.com/id{user['id']})",
                              keyboard_2, attachment=','.join(attachment))
-                # send_message_photos(user_id, user["first_name"], user["last_name"], user["id"], media_ids)
 
             if msg == 'добавить в список избранных':
                 user_data = get_user_data(user['id'])
-                query = session.query(Favourite_user.vk_id)
-                if user['id'] not in list(session.scalars(query)):
+                query = session.query(Favourite_user.vk_id).all()
+                user_id_list = []
+                for q in query:
+                    user_id_list.append(q[0])
+                if user['id'] not in list(user_id_list):
                     insert_favourite_user(session, user_data)
                 vk_user_id = session.query(Vk_User.id).filter(Vk_User.vk_id == int(user_id)).scalar()
                 favourite_user_id = session.query(Favourite_user.id).filter(Favourite_user.vk_id == int(user['id'])).scalar()
@@ -152,7 +156,7 @@ def test_bot():
                     insert_photo(session, media_id, query)
                 send_message(user_id, f"Пользователь: {user['first_name']} {user['last_name']} добавлен в список избранных")
 
-            if msg == 'перейти к следующему':
+            if msg == 'следующий пользователь':
                 user = next(users, 1)
                 if user == 1:
                     offset += 100
@@ -174,10 +178,8 @@ def test_bot():
                     full_name = query[0]
                     vk_id = query[1]
                     attachment = []
-                    print(query)
                     for q in session.query(Photo.media_id).join(Favourite_user).filter(Favourite_user.vk_id == vk_id).all():
                         attachment.append(f"photo{vk_id}_{q[0]}")
-                        print(attachment)
                     send_message(user_id, f"{full_name}(https://vk.com/id{vk_id})", attachment=','.join(attachment))
 
 

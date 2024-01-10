@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from config import user_name, password, data_base
 
 
 Base = declarative_base()
@@ -54,9 +55,7 @@ class Photo(Base):
 
     favourite_user = relationship(Favourite_user, backref="photo")
 
-user_name = ''
-password = ''
-data_base = ''
+
 DSN = f'postgresql://{user_name}:{password}@localhost:5432/{data_base}'
 engine = create_engine(DSN)
 Session = sessionmaker(bind=engine)
