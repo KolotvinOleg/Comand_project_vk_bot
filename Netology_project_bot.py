@@ -4,13 +4,14 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from datetime import date
-from config import VK_GROUP_TOKEN, VK_USERS_TOKEN
+from config import VK_GROUP_TOKEN, VK_USERS_TOKEN, database_name, database_user, database_password
 from Netology_project_DB import (add_user_bot, select_all_vk_users, insert_data_in_vk_users, insert_data_in_search,
                                  insert_data_in_photos, select_data_from_photos, select_data_from_vk_users,
                                  insert_data_in_search_vk_users, update_favorite, select_favorite_users)
 
 
 def send_message(user_id, message, attachment=None, keyboard=None):
+    '''Функция отправки сообщения в чат бота'''
     post = {'user_id': user_id,
             'message': message,
             'random_id': get_random_id()}
@@ -22,6 +23,7 @@ def send_message(user_id, message, attachment=None, keyboard=None):
 
 
 def get_age(bday: date):
+    '''Функция преобразования даты рождения в возраст'''
     today = date.today()
     years_delta = today.year - bday.year
     new_day = date(bday.year + years_delta, bday.month, bday.day)
@@ -31,6 +33,7 @@ def get_age(bday: date):
 
 
 def get_data_to_insert(data):
+    '''Функция подготовки данных для добавления в БД'''
     vk_id = data['id']
     first_name = data['first_name']
     last_name = data['last_name']
@@ -80,6 +83,7 @@ def search_users_vk(session, data: list, offset=0):
 
 
 def get_data_photos(session, vk_id):
+    '''Функция получения данных о 3 самых популярных фотографиях найденного пользователя VK'''
     params = {
         'owner_id': vk_id,
         'album_id': 'profile',
@@ -101,6 +105,7 @@ def get_data_photos(session, vk_id):
 
 
 def get_attaachment(cursor, id):
+    '''Функция получения аттрибута attachment для отправления фотографий найденного пользователя в чат бота'''
     attachment_data = select_data_from_photos(cursor, id)
     attachment = []
     for photo in attachment_data:
@@ -109,6 +114,7 @@ def get_attaachment(cursor, id):
 
 
 def check_city(text: str):
+    '''Функция проверки наличия в профиле пользователя бота информации о родном городе'''
     if text in ['Начать', 'START', 'NEXT', 'Добавить в список избранных', 'Показать список избранных']:
         return False
     if text.isdigit():
@@ -131,7 +137,7 @@ session = vk_api.VkApi(token=VK_GROUP_TOKEN)
 session2 = vk_api.VkApi(token=VK_USERS_TOKEN)
 offset = 0
 user_bot_data = {}
-with psycopg2.connect(database='netology_project_db', user='postgres', password='123098123Kol') as con:
+with psycopg2.connect(database=database_name, user=database_user, password=database_password) as con:
     with con.cursor() as cur:
         for event in VkLongPoll(session).listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
@@ -206,7 +212,7 @@ with psycopg2.connect(database='netology_project_db', user='postgres', password=
                     try:
                         next_people = next(my_iter)
                     except StopIteration:
-                        offset += 20
+                        offset += 50
                         send_message(user_bot_id, text)
                         # Добавляем данные в таблицу search и получаем search_id для добавления в search_vk_users
                         search_id = insert_data_in_search(cur, date.today().strftime('%d.%m.%Y'), user_bot_id)

@@ -1,2 +1,5 @@
-VK_GROUP_TOKEN = '*************'
-VK_USERS_TOKEN = '*************'
+VK_GROUP_TOKEN = '*****'
+VK_USERS_TOKEN = '*****'
+database_name = '*****'
+database_user = '*****'
+database_password = '*****'

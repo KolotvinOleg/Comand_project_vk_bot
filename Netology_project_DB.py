@@ -1,7 +1,8 @@
 import psycopg2
-
+from config import database_user, database_name, database_password
 
 def create_table(cursor):
+    '''Создаем все отношения'''
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users_bot(
     user_bot_id INTEGER PRIMARY KEY,
@@ -57,6 +58,7 @@ def create_table(cursor):
 
 
 def add_user_bot(cursor, vk_id, first_name, last_name, age, city_id, city_title, gender):
+    '''Функция для добавления пользователя бота в таблицу users_bot'''
     cursor.execute("""
     SELECT user_bot_id from users_bot
     """)
@@ -69,6 +71,7 @@ def add_user_bot(cursor, vk_id, first_name, last_name, age, city_id, city_title,
 
 
 def select_all_vk_users(cursor, user_bot_id=None, search_id=None):
+    '''Функция для получения данных о всех найденных пользователях VK'''
     if user_bot_id is None and search_id is None:
         cursor.execute("""
         SELECT vk_user_id FROM vk_users
@@ -85,6 +88,7 @@ def select_all_vk_users(cursor, user_bot_id=None, search_id=None):
 
 
 def insert_data_in_vk_users(cursor, vk_id, first_name, last_name, age, city_id, city_title, gender):
+    '''Функция, добавляющая данные в таблицу vk_users'''
     cursor.execute("""
         INSERT INTO vk_users(vk_user_id, first_name, last_name, age, city_id, city_title, gender)
         VALUES(%s, %s, %s, %s, %s, %s, %s);
@@ -92,6 +96,7 @@ def insert_data_in_vk_users(cursor, vk_id, first_name, last_name, age, city_id, 
 
 
 def insert_data_in_search(cursor, search_date, user_bot_id):
+    '''Функция, добавляющая данные в таблицу search'''
     cursor.execute("""
     INSERT INTO search(search_date, user_bot_id)
     VALUES(%s, %s) RETURNING search_id;
@@ -101,6 +106,7 @@ def insert_data_in_search(cursor, search_date, user_bot_id):
 
 
 def insert_data_in_search_vk_users(cursor, search_id, vk_user_id, favorite=False):
+    '''Функция, добавляющая данные в таблицу search_vk_users'''
     cursor.execute("""
     INSERT INTO search_vk_users(search_id, vk_user_id, favorite)
     VALUES(%s, %s, %s)
@@ -108,6 +114,7 @@ def insert_data_in_search_vk_users(cursor, search_id, vk_user_id, favorite=False
 
 
 def insert_data_in_photos(cursor, photos_data):
+    '''Функция, добавляющая данные в таблицу photos'''
     for photo in photos_data:
         cursor.execute("""
         INSERT INTO photos(vk_user_id, likes, photos_link, owner_id, id)
@@ -116,6 +123,7 @@ def insert_data_in_photos(cursor, photos_data):
 
 
 def select_data_from_photos(cursor, vk_id):
+    '''Функция, получающая данные о фотографиях отдельного найденного пользователя VK'''
     cursor.execute("""
     SELECT owner_id, id FROM photos
     WHERE vk_user_id = %s
@@ -125,6 +133,7 @@ def select_data_from_photos(cursor, vk_id):
 
 
 def select_data_from_vk_users(cursor, vk_id):
+    '''Функция, получающая данные отдельного найденного пользователя VK'''
     cursor.execute("""
     SELECT first_name, last_name FROM vk_users
     WHERE vk_user_id = %s
@@ -134,6 +143,7 @@ def select_data_from_vk_users(cursor, vk_id):
 
 
 def update_favorite(cursor, vk_id, search_id):
+    '''Функция добавления найденного пользователя VK в список избранных'''
     cursor.execute("""
     UPDATE search_vk_users
     SET favorite = TRUE
@@ -142,6 +152,7 @@ def update_favorite(cursor, vk_id, search_id):
 
 
 def select_favorite_users(cursor, user_bot_id):
+    '''Функция получения данных о всех пользователях VK, добавленных в список избранных конкретным польхователем бота'''
     cursor.execute("""
     SELECT vk_user_id, first_name, last_name
     FROM vk_users
@@ -154,7 +165,7 @@ def select_favorite_users(cursor, user_bot_id):
 
 
 if __name__ == '__main__':
-    with psycopg2.connect(database='netology_project_db', user='postgres', password='123098123Kol') as con:
+    with psycopg2.connect(database=database_name, user=database_user, password=database_password) as con:
         with con.cursor() as cur:
             cur.execute("""
             DROP TABLE search_vk_users;
