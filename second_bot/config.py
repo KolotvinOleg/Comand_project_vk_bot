@@ -1,5 +1,0 @@
-my_token = ''
-group_token = ''
-user_name = ''
-password = ''
-data_base = ''
